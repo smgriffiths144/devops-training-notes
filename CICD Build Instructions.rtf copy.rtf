@@ -1,0 +1,422 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2709
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fswiss\fcharset0 Helvetica-Bold;\f2\fmodern\fcharset0 Courier-Bold;
+\f3\fmodern\fcharset0 Courier;\f4\fnil\fcharset0 HelveticaNeue;\f5\froman\fcharset0 Times-Roman;
+\f6\froman\fcharset0 Times-Bold;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh17200\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 Install Git\
+\
+Sudo yum install git -y\
+\
+\
+Install Gradle\
+\
+cd ~/\
+wget -O ~/gradle-4.6-bin.zip https://services.gradle.org/distributions/gradle-4.6-bin.zip\
+sudo yum -y install unzip java-1.8.0-openjdk\
+sudo mkdir /opt/gradle\
+sudo unzip -d /opt/gradle/ ~/gradle-4.6-bin.zip\
+sudo vi /etc/profile.d/gradle.sh\
+\
+\
+
+\f1\b OR
+\f0\b0 \
+\
+cd ~/\
+wget -O ~/gradle-4.7-bin.zip https://services.gradle.org/distributions/gradle-4.7-bin.zip\
+sudo yum -y install unzip java-1.8.0-openjdk\
+sudo mkdir /opt/gradle\
+sudo unzip -d /opt/gradle/ ~/gradle-4.7-bin.zip\
+sudo vi /etc/profile.d/gradle.sh\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b\fs28 \cf0 \expnd0\expndtw0\kerning0
+Add the following text to the file
+\f0\b0\fs24 \kerning1\expnd0\expndtw0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf0 export PATH=$PATH:/opt/gradle/gradle-4.6/bin\
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf0 OR
+\f0\b0 \
+export PATH=$PATH:/opt/gradle/gradle-4.6/bin\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 sudo chmod 755 /etc/profile.d/gradle.sh\
+\
+\
+gradle --versioin\
+\
+cd ~/\
+mkdir my-project\
+cd my-project\
+gradle wrapper\
+./gradlew build\
+\
+Install Jenkins\
+\
+
+\f1\b These 2 tasks are optional they remove java and install java 8
+\f0\b0 \
+sudo yum -y remove java\
+sudo yum -y install java-1.8.0-openjdk\
+\
+\
+sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo\
+sudo rpm --import https://jenkins-ci.org/redhat/jenkins-ci.org.key\
+sudo yum -y install jenkins-2.164.2\
+sudo systemctl enable jenkins\
+sudo systemctl start jenkins\
+\
+Install Jenkins on K8S\
+\
+Create file Jenkins.yml\
+\
+apiVersion: apps/v1\
+kind: Deployment\
+metadata:\
+  name: jenkins\
+spec:\
+  replicas: 1\
+  selector:\
+    matchLabels:\
+      app: jenkins\
+  template:\
+    metadata:\
+      labels:\
+        app: jenkins\
+    spec:\
+      containers:\
+      - name: jenkins\
+        image: jenkins/jenkins:lts\
+        ports:\
+          - name: http-port\
+            containerPort: 8080\
+          - name: jnlp-port\
+            containerPort: 50000\
+        volumeMounts:\
+          - name: jenkins-vol\
+            mountPath: /var/jenkins_vol\
+      volumes:\
+        - name: jenkins-vol\
+          emptyDir: \{\}\
+\
+\'97-\
+\
+apiVersion: v1\
+kind: Service\
+metadata:\
+  name: jenkins\
+spec:\
+  type: NodePort\
+  ports:\
+    - port: 8080\
+      targetPort: 8080\
+      nodePort: 8081\
+  selector:\
+    app: jenkins\
+\
+---\
+\
+apiVersion: v1\
+kind: Service\
+metadata:\
+  name: jenkins-jnlp\
+spec:\
+  type: ClusterIP\
+  ports:\
+    - port: 50000\
+      targetPort: 50000\
+  selector:\
+    app: jenkins\
+\
+\
+Install Docker\
+\
+yum install docker -y\
+systemctl enable docker\
+systemctl start docker\
+Dockerinfo\
+\
+\
+
+\f1\b Install K8S from CICD Training
+\f0\b0 \
+\
+Create cube-config.yml file\
+\
+apiVersion: kubeadm.k8s.io/v1beta2\
+kind: ClusterConfiguration\
+networking:\
+  podSubnet: 10.244.0.0/16\
+apiServer:\
+  extraArgs:\
+    service-node-port-range: 8000-31274\
+\
+Run\
+\
+sudo kubeadm init --config kube-config.yml\
+\
+Then run 3 lines of text in output to that std user can access kubectl\
+\
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml\
+\
+On  nodes\
+\
+kubeadm join 172.31.20.159:6443 --token ru22vv.rvjrvww39vnjkhmg \\\
+    --discovery-token-ca-cert-hash sha256:0f6a9c4a2a53ef549c46a1c5e9e8b3b8fd21dc462ef52607f1925130b406b08d\
+\
+
+\f1\b Install K8S  form Quickstart training
+\f0\b0 \
+\pard\pardeftab720\partightenfactor0
+
+\f3 \cf2 \expnd0\expndtw0\kerning0
+\
+# Disable SELinux.\
+\
+setenforce 0\
+\
+sed -i --follow-symlinks 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux\
+\
+# Enable the "br_netfilter" module for cluster communication.\
+\
+modprobe br_netfilter\
+\
+echo '1' > /proc/sys/net/bridge/bridge-nf-call-iptables\
+\
+# Disable swap to prevent memory allocation issues.\
+    \
+swapoff -a\
+\
+vim /etc/fstab\
+\
+# Comment out the swap line --> # /root/swap swap swap sw 0 0\
+\
+# Install the Docker prerequisites.\
+   \
+yum install -y yum-utils device-mapper-persistent-data lvm2\
+\
+# Add the Docker repo and install Docker.\
+\
+yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo\
+\
+yum install -y docker-ce\
+\
+# Configure the Docker Cgroup Driver to systemd, enable and start Docker\
+    \
+sed -i '/^ExecStart/ s/$/ --exec-opt native.cgroupdriver=systemd/' /usr/lib/systemd/system/docker.service\
+\
+systemctl daemon-reload\
+\
+systemctl enable docker --now \
+\
+systemctl status docker\
+\
+docker info | grep -i cgroup\
+\
+# Add the Kubernetes repo.\
+\
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo\
+[kubernetes]\
+name=Kubernetes\
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64\
+enabled=1\
+gpgcheck=0\
+repo_gpgcheck=0\
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg\
+      https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg\
+EOF\
+\
+# Install Kubernetes.\
+\
+yum install -y kubelet-1.14.0 kubeadm-1.14.0 kubectl-1.14.0 kubernetes-cni-0.7.5\
+\
+# Enable Kubernetes. The kubelet service will not start until you run \
+\
+systemctl enable kubelet\
+\
+
+\f2\b # Note: Complete the following section on the MASTER ONLY!\
+
+\f3\b0 \
+Vi kube-config.yml\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b\fs28 \cf0 Add the following text to the file
+\f3\b0\fs24 \cf2 \
+\
+\
+apiVersion: kubeadm.k8s.io/v1beta1\
+kind: ClusterConfiguration\
+networking:\
+  podSubnet: 10.244.0.0/16\
+apiServer:\
+  extraArgs:\
+    service-node-port-range: 8000-31274\
+\
+# Initialize the cluster using the IP range for Flannel.\
+\
+kubeadm init \'97-config kube-config.yml\
+\
+# Copy the kubeadm join command.\
+\
+# Exit sudo and run the following:\
+\
+exit\
+\
+mkdir -p $HOME/.kube\
+\
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config\
+\
+sudo chown $(id -u):$(id -g) $HOME/.kube/config\
+\
+# Deploy Flannel.\
+\
+kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel-old.yaml\
+\
+# Check the cluster state.\
+\
+kubectl get pods --all-namespaces\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b \cf2 # Note: Complete the following steps on the NODES ONLY!
+\f3\b0 \
+\
+# Run the join command that you copied earlier (this command needs to be run as sudo), then check your nodes from the master.\
+\
+kubeadm join 172.31.31.107:6443 --token 5gwmqo.rtux9tn11bjpmn7s \\\
+    --discovery-token-ca-cert-hash sha256:4aae6a9d1fd8105d19e23231e825d148a8517e\
+\
+kubectl get nodes
+\f0 \cf0 \kerning1\expnd0\expndtw0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+\
+Install Prometheus\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f3\fs28 \cf0 \expnd0\expndtw0\kerning0
+curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > /tmp/get_helm.sh\
+\
+chmod 700 /tmp/get_helm.sh\
+\
+DESIRED_VERSION=v2.8.2 /tmp/get_helm.sh\
+\
+helm init\
+\
+kubectl --namespace=kube-system create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default \
+\
+helm ls \
+\
+cd ~/ \
+\
+git clone https://github.com/kubernetes/charts \
+\
+cd charts \
+\
+git checkout efdcffe0b6973111ec6e5e83136ea74cdbe6527d \
+\
+cd ../ \
+\
+vi prometheus-values.yml\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b \cf0 Add the following text to the file\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f4\b0\fs24 \cf0 alertmanager: \
+      persistentVolume:\
+              enabled: false \
+server: \
+      persistentVolume: \
+               enabled: false
+\f5 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b\fs28 \cf0 Then Run
+\f6\fs24 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f5\b0 \cf0 helm install -f prometheus-values.yml charts/stable/prometheus --name prometheus --namespace prometheus \
+\
+vi grafana-values.yml\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b\fs28 \cf0 Add the following text to the file\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f5\b0\fs24 \cf0 adminPassword: password\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b\fs28 \cf0 Then Run
+\f5\b0\fs24 \
+\
+helm install -f grafana-values.yml charts/stable/grafana/ --name grafana --namespace grafana \
+\
+vi grafana-ext.yml\
+
+\f0 \kerning1\expnd0\expndtw0 \
+
+\f2\b\fs28 \expnd0\expndtw0\kerning0
+Add the following text to the file\
+\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f3\b0\fs24 \cf0 kind: Service \
+apiVersion: v1 \
+metadata: \
+  namespace: grafana \
+  name: grafana-ext \
+spec: \
+  type: NodePort \
+  selector: \
+    app: grafana \
+  ports: \
+ - protocol: TCP \
+  port: 3000 \
+  nodePort: 8080 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b\fs28 \cf0 Then Run\
+\pard\pardeftab720\partightenfactor0
+
+\f3\b0\fs24 \cf0 \
+kubectl apply -f grafana-ext.yml
+\f2\b\fs28 \
+\
+Check poem status\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f5\b0\fs24 \cf0 kubectl get pods -n prometheus \
+kubectl get pods -n grafana
+\f2\b\fs28 \
+\
+\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0\b0\fs24 \cf0 \kerning1\expnd0\expndtw0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 Install Graphing\
+}
